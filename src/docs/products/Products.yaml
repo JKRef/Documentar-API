@@ -1,0 +1,297 @@
+paths:
+  /api/products:
+    get:
+      summary: Get all products with pagination
+      tags:
+        - Products
+      parameters:
+        - in: query
+          name: category
+          type: string
+          description: Category to filter the products
+        - in: query
+          name: status
+          type: boolean
+          description: Product status to filter products
+        - in: query
+          name: limit
+          type: integer
+          description: Limit of products per page, default is 10
+        - in: query
+          name: page
+          type: integer
+          description: Number of page currently in view, default is 1
+        - in: query
+          name: sort
+          type: integer
+          description: Sorting order of products by price, 1 is for ascending, -1 is for descending
+      responses:
+        "200":
+          description: Got list of products
+          content:
+            application/json:
+              schema:
+                type: object
+                $ref: '#/components/schemas/ProductsPaginate'
+        "500":
+          description: Validation error, Internal server error
+    post:
+      summary: Add a product to the database, this works only for users with the admin or premium role
+      tags:
+        - Products
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/requestBodies/createProduct'
+      responses:
+        "200":
+          description: Product created
+          content:
+            application/json:
+              schema:
+                type: object
+                $ref: '#/components/schemas/Product'
+        "401":
+          description: Unauthorized, login first.
+        "500":
+          description: Validation exception, Internal server error
+  /api/products/{productID}:
+    get:
+      summary: 'Get a product by ID'
+      tags:
+        - Products
+      parameters:
+        - in: path
+          name: productID
+          required: true
+          description: "Product ID"
+          schema:
+            type: string
+      responses:
+        "200":
+          description: "Product"
+          content:
+            application/json:
+              schema:
+                type: object
+                $ref: "#/components/schemas/Product"
+        "500":
+          description: "Product not in database, Internal server error"
+    put:
+      summary: 'Edit a selected product information, the user must be either an admin or the premium user that created the product to edit it.'
+      tags:
+        - Products
+      parameters:
+        - in: path
+          name: productID
+          required: true
+          description: "Product ID"
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/requestBodies/editProduct'
+      responses:
+        "200":
+          description: "Product information updated"
+          content:
+            application/json:
+              schema:
+                type: object
+                $ref: "#/components/schemas/Product"
+        "401":
+          description: Unauthorized, login first.
+        "500":
+          description: "Unauthorized user, Validation error, Internal server error"
+    delete:
+      summary: 'Delete a product'
+      tags:
+        - Products
+      parameters:
+        - in: path
+          name: productID
+          required: true
+          description: "Product ID"
+          schema:
+            type: string
+      responses:
+        "200":
+          description: "Product was successfully deleted"
+          content:
+            application/json:
+              schema:
+                type: object
+                $ref: "#/components/schemas/Product"
+        "401":
+          description: Unauthorized, login first.
+        "500":
+          description: "Unauthorized user, Product does not exist in database, Internal server error"
+
+components:
+  schemas:
+    Product:
+      type: object
+      properties:
+        _id:
+          type: ObjectId
+          description: "Product ID"
+        title:
+          type: string
+          description: 'Product name'
+        description: 
+          type: string
+          description: 'Product description'
+        owner: 
+          type: string
+          description: 'Product creator, can be admin or premium user'
+        code: 
+          type: string
+          description: 'Unique product code'
+        price: 
+          type: integer
+          description: 'Product price'
+        status:
+          type: boolean
+          description: 'Product status, value is a boolean'
+        stock:
+          type: integer
+          description: 'Product stock'
+        category:
+          type: string
+          description: 'Product category'
+        thumbnails:
+          type: array
+          description: 'Product image(s)'
+      example:
+        _id: 'ObjectId("fafeac5ebe40885cffac7c39")'
+        title: 'Ladrillo Pizza'
+        description: 'The Nagasaki Lander is the trademarked name of several series of Nagasaki sport bikes, that started with the 1984'
+        owner: 'example@ex.com'
+        code: 'ABC800J'
+        price: 8697.00
+        status: true
+        stock: 70
+        category: 'Hogar'
+        thumbnails: '["https://loremflickr.com/640/480/animals"]'
+    ProductsPaginate:
+      type: object
+      properties:
+        docs:
+          type: array
+          description: List of products in current page
+          items:
+            type: object
+            $ref: "#/components/schemas/Product"
+        totalDocs:
+          type: integer
+          description: Total amount of docs
+          example: 1
+        offset: 
+          type: integer
+        limit: 
+          type: integer
+          description: Amount of docs per page
+          example: 10
+        totalPages: 
+          type: integer
+          description: Total amount of pages
+          example: 1
+        page: 
+          type: integer
+          description: Current page
+          example: 1
+        pagingCounter:
+          type: integer
+          example: 1
+        hasPrevPage:
+          type: boolean
+          example: false
+        hasNextPage:
+          type: boolean
+          example: false
+        prevPage:
+          type: integer
+          example: null
+        nextPage:
+          type: integer
+          example: null
+  requestBodies:
+    createProduct:
+      type: object
+      properties:
+        title:
+          type: string
+          required: true
+          description: 'Product name'
+        description: 
+          type: string
+          required: true
+          description: 'Product description'
+        code: 
+          type: string
+          required: true
+          description: 'Unique product code'
+        price: 
+          type: integer
+          required: true
+          description: 'Product price'
+        status:
+          type: boolean
+          description: 'Product status, value is a boolean'
+        stock:
+          type: integer
+          required: true
+          description: 'Product stock'
+        category:
+          type: string
+          required: true
+          description: 'Product category'
+        thumbnails:
+          type: array
+          description: 'Product image(s)'
+      example:
+        title: 'Ladrillo Pizza'
+        description: 'The Nagasaki Lander is the trademarked name of several series of Nagasaki sport bikes, that started with the 1984'
+        code: 'ABC800J'
+        price: 8697.00
+        status: true
+        stock: 70
+        category: 'Hogar'
+        thumbnails: ['https://loremflickr.com/640/480/animals']
+    editProduct:
+      type: object
+      properties:
+        title:
+          type: string
+          description: 'Product name'
+        description: 
+          type: string
+          description: 'Product description'
+        code: 
+          type: string
+          description: 'Unique product code'
+        price: 
+          type: integer
+          description: 'Product price'
+        status:
+          type: boolean
+          description: 'Product status, value is a boolean'
+        stock:
+          type: integer
+          description: 'Product stock'
+        category:
+          type: string
+          description: 'Product category'
+        thumbnails:
+          type: array
+          description: 'Product image(s)'
+      example:
+        title: 'Nuevo titulo'
+        price: 900
+        stock: 30
+        thumbnails: ['https://loremflickr.com/640/480/animals']

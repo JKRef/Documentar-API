@@ -1,0 +1,268 @@
+paths:
+  /api/carts/:
+    post:
+      summary: 'Creates a new cart'
+      tags:
+        - Carts
+      responses:
+        "200":
+          description: "Cart created successfully"
+          content:
+            application/json:
+              schema:
+                type: object
+                $ref: "#/components/schemas/Cart"
+        "500":
+          description: "Internal server error"
+  /api/carts/{cartID}:
+    get:
+      summary: 'Get a cart by ID'
+      tags:
+        - Carts
+      parameters:
+        - in: path
+          name: cartID
+          required: true
+          description: "Cart ID"
+          schema:
+            type: string
+      responses:
+        "200":
+          description: "Cart found"
+          content:
+            application/json:
+              schema:
+                type: object
+                $ref: "#/components/schemas/CartWithProducts"
+        "500":
+          description: "Cart does not exist, Internal server error"
+    put:
+      summary: 'Add product(s) to a cart, a product owner cannot add their own products to the cart'
+      tags:
+        - Carts
+      parameters:
+        - in: path
+          name: cartID
+          required: true
+          description: Cart ID
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/requestBodies/addProductsToCart'
+      responses:
+        "200":
+          description: Products successfully added to the cart
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CartWithProducts"
+        "401":
+          description: Unauthorized, login first.
+        "500":
+          description: Validation error, Internal server error
+    delete:
+      summary: Delete all products from the cart
+      tags:
+        - Carts
+      parameters:
+        - in: path
+          name: cartID
+          required: true
+          description: "Cart ID"
+          schema:
+            type: string
+      responses:
+        "200":
+          description: "Cart has been successfully emptied"
+          content:
+            application/json:
+              schema:
+                type: object
+                $ref: "#/components/schemas/Cart"
+        "500":
+          description: "Internal server error"
+  /api/carts/{cartID}/product/{productID}:
+    put:
+      summary: Add quantity of a product to the cart
+      tags:
+        - Carts
+      parameters:
+        - in: path
+          name: cartID
+          required: true
+          description: Cart ID
+          type: string
+        - in: path
+          name: productID
+          required: true
+          description: Product ID
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                quantity:
+                  type: integer
+                  example: 2
+      responses:
+        "200":
+          description: Quantity updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CartWithProducts"
+        "500":
+          description: Validations Error, Product not in cart, Internal server error
+    delete:
+      summary: 'Delete a product from the cart'
+      tags:
+        - Carts
+      parameters:
+        - in: path
+          name: cartID
+          required: true
+          description: Cart ID
+          type: string
+        - in: path
+          name: productID
+          required: true
+          description: Product ID
+          type: string
+      responses:
+        "200":
+          description: "Product deleted from cart"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Cart"
+        "500":
+          description: "Product not in cart, Internal server error"
+  /api/carts/{cartID}/purchase:
+    get:
+      summary: 'Complete the purchase with the specified cart'
+      tags:
+        - Carts
+      parameters:
+        - in: path
+          name: cartID
+          required: true
+          description: Cart ID
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Generated ticket
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Ticket"
+        "401":
+          description: Unauthorized, login first.
+        "500":
+          description: "Validation error, Internal server error"
+
+components:
+  schemas:
+    Cart:
+      type: object
+      properties:
+        _id:
+          type: ObjectId
+          description: "Product ID"
+        products:
+          type: array
+          description: 'Products added to the cart'
+          items:
+            type: object
+            properties:
+              quantity:
+                type: integer
+                description: Quantity of a product
+              product:
+                type: ObjectId
+                description: Product ID
+      example:
+        _id: 63e07145e002eafab874de83
+        products: []
+    CartWithProducts:
+      type: object
+      properties:
+        _id:
+          type: ObjectId
+          description: "Cart ID"
+        products:
+          type: array
+          description: 'Products added to the cart'
+          items:
+            type: object
+            properties:
+              quantity:
+                type: integer
+                description: Quantity of a product
+              product:
+                type: ObjectId
+                description: Product ID
+      example:
+        _id: 63e07145e002eafab874de83
+        products:
+          - product: 63d6c4451e652985acdcb78d
+            quantity: 3
+          - product: 63d6c4451e652985acdcb78e
+            quantity: 1
+    Ticket:
+      type: object
+      properties: 
+        _id: 
+          type: ObjectId
+          description: Ticket ID
+          example: 64530ae7504af559911daf10
+        code:
+          type: string
+          description: Ticket code
+          example: adRXIPYgt
+        purchase_datetime: 
+          type: string
+          description: Ticket creation date and time
+          example: 2023-05-04T01:31:19.000Z
+        amount:
+          type: integer
+          description: Purchase total
+          example: 8250
+        purchaser:
+          type: string
+          description: Email of the purshasing user
+          example: c@t.com
+  requestBodies:
+    addProductsToCart:
+      type: array
+      items:
+        properties:
+          type: object
+          properties:
+            quantity:
+              default: 1
+              type: integer
+              description: Quantity of a product
+            product:
+              type: ObjectId
+              description: Product ID
+      example:
+        - product: 63d6c4451e652985acdcb78d
+          quantity: 3
+        - product: 63d6c4451e652985acdcb78e
+          quantity: 1
+    addQuantityOfProduct:
+      type: object
+      properties:
+        quantity:
+          type: integer
+          example: 2
